@@ -36,6 +36,7 @@
     "homebridge": "^1.0.4"
   },
   "dependencies": {
-    "@types/color": "^3.0.1"
+    "@types/color": "^3.0.1",
+    "color": "^3.1.3"
   }
 }

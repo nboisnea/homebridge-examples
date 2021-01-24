@@ -104,7 +104,7 @@ class LedStrip implements AccessoryPlugin {
   private sendData(callback: CharacteristicSetCallback): void {
     const message = Uint8Array.from(this.isOn ? this.color.rgb().array() : [0, 0, 0]);
     this.udpClient.send(message, this.port, this.ipAddress, err => {
-      this.log(`LEDs set to ${this.color.hex()} / ${this.color.hsl().string()}.`);
+      this.log(`LEDs set to ${this.color.hex()} / ${this.color.hsv().string()}.`);
       callback(err);
     })
   }

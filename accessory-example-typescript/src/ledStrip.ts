@@ -124,28 +124,28 @@ class LedStrip implements AccessoryPlugin {
 
   private handleHueSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
     const hue = value as number;
-    this.color = Color.hsl(hue, this.color.saturationl(), this.color.lightness());
+    this.color = Color.hsv(hue, this.color.saturationl(), this.color.value());
     this.sendData(callback);
   }
 
   private handleSaturationGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.color.saturationl());
+    callback(undefined, this.color.saturationv());
   }
 
   private handleSaturationSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
     const saturation = value as number;
-    this.color = Color.hsl(this.color.hue(), saturation, this.color.lightness());
+    this.color = Color.hsv(this.color.hue(), saturation, this.color.value());
     this.sendData(callback);
   }
 
 
   private handleBrightnessGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.color.lightness());
+    callback(undefined, this.color.value());
   }
 
   private handleBrightnessSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
     const brightness = value as number;
-    this.color = Color.hsl(this.color.hue(), this.color.saturationl(), brightness);
+    this.color = Color.hsv(this.color.hue(), this.color.saturationv(), brightness);
     this.sendData(callback);
   }
 }

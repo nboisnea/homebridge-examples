@@ -75,6 +75,14 @@ class LedStrip implements AccessoryPlugin {
       .on(CharacteristicEventTypes.GET, this.handleHueGet.bind(this))
       .on(CharacteristicEventTypes.SET, this.handleHueSet.bind(this));
 
+    this.ledStripService.getCharacteristic(hap.Characteristic.Saturation)
+      .on(CharacteristicEventTypes.GET, this.handleSaturationGet.bind(this))
+      .on(CharacteristicEventTypes.SET, this.handleSaturationSet.bind(this));
+
+    this.ledStripService.getCharacteristic(hap.Characteristic.Brightness)
+      .on(CharacteristicEventTypes.GET, this.handleBrightnessGet.bind(this))
+      .on(CharacteristicEventTypes.SET, this.handleBrightnessSet.bind(this));
+
     this.informationService = new hap.Service.AccessoryInformation()
       .setCharacteristic(hap.Characteristic.Manufacturer, "Nathan Boisneault")
       .setCharacteristic(hap.Characteristic.Model, "LED strip");
@@ -117,6 +125,27 @@ class LedStrip implements AccessoryPlugin {
   private handleHueSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
     const hue = value as number;
     this.color = Color.hsl(hue, this.color.saturationl(), this.color.lightness());
+    this.sendData(callback);
+  }
+
+  private handleSaturationGet(callback: CharacteristicGetCallback): void {
+    callback(undefined, this.color.saturationl());
+  }
+
+  private handleSaturationSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+    const saturation = value as number;
+    this.color = Color.hsl(this.color.hue(), saturation, this.color.lightness());
+    this.sendData(callback);
+  }
+
+
+  private handleBrightnessGet(callback: CharacteristicGetCallback): void {
+    callback(undefined, this.color.lightness());
+  }
+
+  private handleBrightnessSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+    const brightness = value as number;
+    this.color = Color.hsl(this.color.hue(), this.color.saturationl(), brightness);
     this.sendData(callback);
   }
 }

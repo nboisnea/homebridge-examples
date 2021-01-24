@@ -10,6 +10,7 @@ import {
   Logging,
   Service
 } from "homebridge";
+import * as dgram from "dgram";
 
 /*
  * IMPORTANT NOTICE
@@ -40,37 +41,39 @@ let hap: HAP;
  */
 export = (api: API) => {
   hap = api.hap;
-  api.registerAccessory("ExampleSwitch", ExampleSwitch);
+  api.registerAccessory("LedStrip", LedStrip);
 };
 
-class ExampleSwitch implements AccessoryPlugin {
+class LedStrip implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
   private switchOn = false;
+  private ipAddress = '192.168.1.55';
+  private port = 7026;
 
-  private readonly switchService: Service;
+  private readonly ledStripService: Service;
   private readonly informationService: Service;
 
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
 
-    this.switchService = new hap.Service.Switch(this.name);
-    this.switchService.getCharacteristic(hap.Characteristic.On)
+    this.ledStripService = new hap.Service.Switch(this.name);
+    this.ledStripService.getCharacteristic(hap.Characteristic.On)
       .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
-        log.info("Current state of the switch was returned: " + (this.switchOn? "ON": "OFF"));
+        log.info("Current state of the LEDs was returned: " + (this.switchOn? "ON": "OFF"));
         callback(undefined, this.switchOn);
       })
       .on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
         this.switchOn = value as boolean;
         log.info("Switch state was set to: " + (this.switchOn? "ON": "OFF"));
-        callback();
+        this.applyState(callback);
       });
 
     this.informationService = new hap.Service.AccessoryInformation()
-      .setCharacteristic(hap.Characteristic.Manufacturer, "Custom Manufacturer")
-      .setCharacteristic(hap.Characteristic.Model, "Custom Model");
+      .setCharacteristic(hap.Characteristic.Manufacturer, "Nathan Boisneault")
+      .setCharacteristic(hap.Characteristic.Model, "LED strip");
 
     log.info("Switch finished initializing!");
   }
@@ -90,8 +93,17 @@ class ExampleSwitch implements AccessoryPlugin {
   getServices(): Service[] {
     return [
       this.informationService,
-      this.switchService,
+      this.ledStripService,
     ];
   }
 
+  applyState(callback: CharacteristicSetCallback): void {
+    const udpClient = dgram.createSocket('udp4');
+    const val = this.switchOn ? 255 : 0;
+    const message = Uint8Array.from([val, val, val]);
+    udpClient.send(message, this.port, this.ipAddress, err => {
+      udpClient.close();
+      callback(err);
+    })
+  }
 }

@@ -11,6 +11,8 @@ import {
   Service
 } from "homebridge";
 import * as dgram from "dgram";
+import {Socket} from "dgram";
+import Color from "color";
 
 /*
  * IMPORTANT NOTICE
@@ -48,9 +50,13 @@ class LedStrip implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
-  private switchOn = false;
   private ipAddress = '192.168.1.55';
   private port = 7026;
+
+  private isOn = false;
+  private color = Color.rgb(255, 255, 255);
+
+  private udpClient: Socket;
 
   private readonly ledStripService: Service;
   private readonly informationService: Service;
@@ -58,52 +64,59 @@ class LedStrip implements AccessoryPlugin {
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
+    this.udpClient = dgram.createSocket('udp4');
 
-    this.ledStripService = new hap.Service.Switch(this.name);
+    this.ledStripService = new hap.Service.Lightbulb(this.name);
     this.ledStripService.getCharacteristic(hap.Characteristic.On)
-      .on(CharacteristicEventTypes.GET, (callback: CharacteristicGetCallback) => {
-        log.info("Current state of the LEDs was returned: " + (this.switchOn? "ON": "OFF"));
-        callback(undefined, this.switchOn);
-      })
-      .on(CharacteristicEventTypes.SET, (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-        this.switchOn = value as boolean;
-        log.info("Switch state was set to: " + (this.switchOn? "ON": "OFF"));
-        this.applyState(callback);
-      });
+      .on(CharacteristicEventTypes.GET, this.handleOnGet.bind(this))
+      .on(CharacteristicEventTypes.SET, this.handleOnSet.bind(this));
+
+    this.ledStripService.getCharacteristic(hap.Characteristic.Hue)
+      .on(CharacteristicEventTypes.GET, this.handleHueGet.bind(this))
+      .on(CharacteristicEventTypes.SET, this.handleHueSet.bind(this));
 
     this.informationService = new hap.Service.AccessoryInformation()
       .setCharacteristic(hap.Characteristic.Manufacturer, "Nathan Boisneault")
       .setCharacteristic(hap.Characteristic.Model, "LED strip");
 
-    log.info("Switch finished initializing!");
-  }
-
-  /*
-   * This method is optional to implement. It is called when HomeKit ask to identify the accessory.
-   * Typical this only ever happens at the pairing process.
-   */
-  identify(): void {
-    this.log("Identify!");
+    log.info("LED Strip initialized");
   }
 
   /*
    * This method is called directly after creation of this instance.
    * It should return all services which should be added to the accessory.
    */
-  getServices(): Service[] {
+  public getServices(): Service[] {
     return [
       this.informationService,
       this.ledStripService,
     ];
   }
 
-  applyState(callback: CharacteristicSetCallback): void {
-    const udpClient = dgram.createSocket('udp4');
-    const val = this.switchOn ? 255 : 0;
-    const message = Uint8Array.from([val, val, val]);
-    udpClient.send(message, this.port, this.ipAddress, err => {
-      udpClient.close();
+  private sendData(callback: CharacteristicSetCallback): void {
+    const message = Uint8Array.from(this.isOn ? this.color.rgb().array() : [0, 0, 0]);
+    this.udpClient.send(message, this.port, this.ipAddress, err => {
+      this.log(`LEDs set to ${this.color.hex()} / ${this.color.hsl().string()}.`);
       callback(err);
     })
+  }
+
+  private handleOnGet(callback: CharacteristicGetCallback): void {
+    callback(undefined, this.isOn);
+  }
+
+  private handleOnSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+    this.isOn = value as boolean;
+    this.sendData(callback);
+  }
+
+  private handleHueGet(callback: CharacteristicGetCallback): void {
+    callback(undefined, this.color.hue());
+  }
+
+  private handleHueSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+    const hue = value as number;
+    this.color = Color.hsl(hue, this.color.saturationl(), this.color.lightness());
+    this.sendData(callback);
   }
 }

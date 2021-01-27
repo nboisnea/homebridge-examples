@@ -6,7 +6,6 @@ import {
   CharacteristicGetCallback,
   CharacteristicSetCallback,
   CharacteristicValue,
-  HAP,
   Logging,
   Service
 } from "homebridge";
@@ -25,8 +24,8 @@ class LedStrip implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
-  private ipAddress = '192.168.1.55';
-  private port = 7026;
+  private readonly ipAddress: string;
+  private readonly port: number;
 
   private isOn = false;
   private color = Color.rgb(255, 255, 255);
@@ -39,6 +38,8 @@ class LedStrip implements AccessoryPlugin {
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
+    this.ipAddress = config['ipAddress'];
+    this.port = config['port'];
     this.udpClient = dgram.createSocket('udp4');
 
     this.ledStripService = new api.hap.Service.Lightbulb(this.name);
@@ -112,7 +113,6 @@ class LedStrip implements AccessoryPlugin {
     this.color = Color.hsv(this.color.hue(), saturation, this.color.value());
     this.sendData(callback);
   }
-
 
   private handleBrightnessGet(callback: CharacteristicGetCallback): void {
     callback(undefined, this.color.value());

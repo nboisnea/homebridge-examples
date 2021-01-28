@@ -8,29 +8,24 @@ import {
   CharacteristicValue,
   Logging,
   Service
-} from "homebridge";
-import * as dgram from "dgram";
-import {Socket} from "dgram";
-import Color from "color";
+} from 'homebridge';
+import Color from 'color';
+import UdpLedStrip from './utils/UdpLedStrip';
 
 /*
- * Initializer function called when the plugin is loaded.
+ * Initializer function called when the plugin is ded.
  */
 export = (api: API) => {
-  api.registerAccessory("LedStrip", LedStrip);
+  api.registerAccessory('LedStrip', LedStrip);
 };
 
 class LedStrip implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
-  private readonly ipAddress: string;
-  private readonly port: number;
-
+  private udpLedStrip: UdpLedStrip;
   private isOn = false;
   private color = Color.rgb(255, 255, 255);
-
-  private udpClient: Socket;
 
   private readonly ledStripService: Service;
   private readonly informationService: Service;
@@ -38,9 +33,7 @@ class LedStrip implements AccessoryPlugin {
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
-    this.ipAddress = config['ipAddress'];
-    this.port = config['port'];
-    this.udpClient = dgram.createSocket('udp4');
+    this.udpLedStrip = new UdpLedStrip(config['ipAddress']);
 
     this.ledStripService = new api.hap.Service.Lightbulb(this.name);
     this.ledStripService.getCharacteristic(api.hap.Characteristic.On)
@@ -60,10 +53,10 @@ class LedStrip implements AccessoryPlugin {
       .on(CharacteristicEventTypes.SET, this.handleBrightnessSet.bind(this));
 
     this.informationService = new api.hap.Service.AccessoryInformation()
-      .setCharacteristic(api.hap.Characteristic.Manufacturer, "Nathan Boisneault")
-      .setCharacteristic(api.hap.Characteristic.Model, "LED strip");
+      .setCharacteristic(api.hap.Characteristic.Manufacturer, 'Nathan Boisneault')
+      .setCharacteristic(api.hap.Characteristic.Model, 'LED strip');
 
-    log.info("LED Strip initialized");
+    log.info('LED Strip initialized');
   }
 
   /*
@@ -73,54 +66,102 @@ class LedStrip implements AccessoryPlugin {
   public getServices(): Service[] {
     return [
       this.informationService,
-      this.ledStripService,
+      this.ledStripService
     ];
   }
 
-  private sendData(callback: CharacteristicSetCallback): void {
-    const message = Uint8Array.from(this.isOn ? this.color.rgb().array() : [0, 0, 0]);
-    this.udpClient.send(message, this.port, this.ipAddress, err => {
-      this.log(`LEDs set to ${this.color.hex()} / ${this.color.hsv().string()}.`);
+  private sendData(): Promise<void> {
+    return this.udpLedStrip.sendColor(this.isOn ? this.color : Color.rgb(0, 0, 0));
+  }
+
+  private async handleOnGet(callback: CharacteristicGetCallback): Promise<void> {
+    try {
+      const currentColor = await this.udpLedStrip.fetchColor();
+      callback(undefined, currentColor.value() !== 0);
+    } catch (err) {
       callback(err);
-    })
+    }
   }
 
-  private handleOnGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.isOn);
-  }
-
-  private handleOnSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  private async handleOnSet(value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     this.isOn = value as boolean;
-    this.sendData(callback);
+
+    try {
+      await this.sendData();
+      this.log.info(`Turned ${this.isOn ? 'on' : 'off'}.`);
+      callback();
+    } catch (err) {
+      this.log.error(`Error while turning lights ${this.isOn ? 'on' : 'off'}: ${err.message}`);
+      callback(err);
+    }
   }
 
-  private handleHueGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.color.hue());
+  private async handleHueGet(callback: CharacteristicGetCallback): Promise<void> {
+    try {
+      const currentColor = await this.udpLedStrip.fetchColor();
+      callback(undefined, currentColor.hue());
+    } catch (err) {
+      callback(err);
+    }
   }
 
-  private handleHueSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  private async handleHueSet(value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const hue = value as number;
-    this.color = Color.hsv(hue, this.color.saturationl(), this.color.value());
-    this.sendData(callback);
+    this.color = Color.hsv(hue, this.color.saturationv(), this.color.value());
+
+    try {
+      await this.sendData();
+      this.log.info(`Color was set to ${this.color.hex()}.`);
+      callback();
+    } catch (err) {
+      this.log.error(`Error while setting hue: ${err.message}`);
+      callback(err);
+    }
   }
 
-  private handleSaturationGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.color.saturationv());
+  private async handleSaturationGet(callback: CharacteristicGetCallback): Promise<void> {
+    try {
+      const currentColor = await this.udpLedStrip.fetchColor();
+      callback(undefined, currentColor.saturationv());
+    } catch (err) {
+      callback(err);
+    }
   }
 
-  private handleSaturationSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  private async handleSaturationSet(value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const saturation = value as number;
     this.color = Color.hsv(this.color.hue(), saturation, this.color.value());
-    this.sendData(callback);
+
+    try {
+      await this.sendData();
+      this.log.info(`Color was set to ${this.color.hex()}.`);
+      callback();
+    } catch (err) {
+      this.log.error(`Error while setting saturation: ${err.message}`);
+      callback(err);
+    }
   }
 
-  private handleBrightnessGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.color.value());
+  private async handleBrightnessGet(callback: CharacteristicGetCallback): Promise<void> {
+    try {
+      const currentColor = await this.udpLedStrip.fetchColor();
+      callback(undefined, currentColor.value());
+    } catch (err) {
+      callback(err);
+    }
   }
 
-  private handleBrightnessSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  private async handleBrightnessSet(value: CharacteristicValue, callback: CharacteristicSetCallback): Promise<void> {
     const brightness = value as number;
     this.color = Color.hsv(this.color.hue(), this.color.saturationv(), brightness);
-    this.sendData(callback);
+
+    try {
+      await this.sendData();
+      this.log.info(`Color was set to ${this.color.hex()}.`);
+      callback();
+    } catch (err) {
+      this.log.error(`Error while setting brightness: ${err.message}`);
+      callback(err);
+    }
   }
 }

@@ -20,7 +20,8 @@ export default class UdpLedStrip {
       const socket = dgram.createSocket('udp4')
         .on('message', msg => {
           this.log?.debug(`Received UDP data: ${msg}`);
-          resolve(Color.rgb(msg.readInt8(0), msg.readInt8(1), msg.readInt8(2)))
+          socket.close();
+          resolve(Color.rgb(msg.readInt8(0), msg.readInt8(1), msg.readInt8(2)));
         })
         .on('error', err => reject(err))
         .on('listening', () => {
@@ -34,7 +35,6 @@ export default class UdpLedStrip {
           reject(err);
         }
         this.log?.debug(`Color request was sent`);
-        socket.close();
       });
     });
   }

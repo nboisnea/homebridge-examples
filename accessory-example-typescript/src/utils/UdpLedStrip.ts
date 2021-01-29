@@ -19,14 +19,14 @@ export default class UdpLedStrip {
     return new Promise((resolve, reject) => {
       const socket = dgram.createSocket('udp4')
         .on('message', msg => {
-          this.log?.debug(`Received UDP data: ${msg}`);
+          this.log?.info(`Received UDP data: ${msg}`);
           socket.close();
           resolve(Color.rgb(msg.readInt8(0), msg.readInt8(1), msg.readInt8(2)));
         })
         .on('error', err => reject(err))
         .on('listening', () => {
           setTimeout(() => {
-            this.log?.debug('Request timed out');
+            this.log?.info('Request timed out');
             reject(new Error('Accessory did not respond'))
           }, TIMEOUT);
         });
@@ -34,7 +34,7 @@ export default class UdpLedStrip {
         if (err) {
           reject(err);
         }
-        this.log?.debug(`Color request was sent`);
+        this.log?.info(`Color request was sent`);
       });
     });
   }

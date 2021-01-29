@@ -33,7 +33,7 @@ class LedStrip implements AccessoryPlugin {
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
-    this.udpLedStrip = new UdpLedStrip(config['ipAddress']);
+    this.udpLedStrip = new UdpLedStrip(config['ipAddress'], log);
 
     this.ledStripService = new api.hap.Service.Lightbulb(this.name);
     this.ledStripService.getCharacteristic(api.hap.Characteristic.On)

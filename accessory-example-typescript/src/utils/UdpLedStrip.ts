@@ -1,6 +1,7 @@
 import Color from 'color';
 import * as dgram from 'dgram';
 import {Logging} from 'homebridge';
+import Timeout = NodeJS.Timeout;
 
 const PORT = 7026;
 const TIMEOUT = 5000;
@@ -17,15 +18,17 @@ export default class UdpLedStrip {
 
   public fetchColor(): Promise<Color> {
     return new Promise((resolve, reject) => {
+      let timeout: Timeout;
       const socket = dgram.createSocket('udp4')
         .on('message', msg => {
           this.log?.info(`Received UDP data: ${msg}`);
           socket.close();
+          clearTimeout(timeout);
           resolve(Color.rgb(msg.readInt8(0), msg.readInt8(1), msg.readInt8(2)));
         })
         .on('error', err => reject(err))
         .on('listening', () => {
-          setTimeout(() => {
+          timeout = setTimeout(() => {
             this.log?.info('Request timed out');
             reject(new Error('Accessory did not respond'))
           }, TIMEOUT);

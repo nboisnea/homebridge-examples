@@ -76,8 +76,8 @@ class LedStrip implements AccessoryPlugin {
 
   private async handleOnGet(callback: CharacteristicGetCallback): Promise<void> {
     try {
-      const currentColor = await this.udpLedStrip.fetchColor();
-      callback(undefined, currentColor.value() !== 0);
+      this.color = await this.udpLedStrip.fetchColor();
+      callback(undefined, this.color.value() !== 0);
     } catch (err) {
       callback(err);
     }
@@ -98,8 +98,8 @@ class LedStrip implements AccessoryPlugin {
 
   private async handleHueGet(callback: CharacteristicGetCallback): Promise<void> {
     try {
-      const currentColor = await this.udpLedStrip.fetchColor();
-      callback(undefined, currentColor.hue());
+      this.color = await this.udpLedStrip.fetchColor();
+      callback(undefined, this.color.hue());
     } catch (err) {
       callback(err);
     }
@@ -121,8 +121,8 @@ class LedStrip implements AccessoryPlugin {
 
   private async handleSaturationGet(callback: CharacteristicGetCallback): Promise<void> {
     try {
-      const currentColor = await this.udpLedStrip.fetchColor();
-      callback(undefined, currentColor.saturationv());
+      this.color = await this.udpLedStrip.fetchColor();
+      callback(undefined, this.color.saturationv());
     } catch (err) {
       callback(err);
     }
@@ -144,8 +144,8 @@ class LedStrip implements AccessoryPlugin {
 
   private async handleBrightnessGet(callback: CharacteristicGetCallback): Promise<void> {
     try {
-      const currentColor = await this.udpLedStrip.fetchColor();
-      callback(undefined, currentColor.value());
+      this.color = await this.udpLedStrip.fetchColor();
+      callback(undefined, this.color.value());
     } catch (err) {
       callback(err);
     }

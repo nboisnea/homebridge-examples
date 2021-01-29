@@ -21,10 +21,10 @@ export default class UdpLedStrip {
       let timeout: Timeout;
       const socket = dgram.createSocket('udp4')
         .on('message', msg => {
-          this.log?.info(`Received UDP data: ${msg.readInt8(0)} ${msg.readInt8(1)} ${msg.readInt8(2)}`);
+          this.log?.info(`Received UDP data: ${msg.readUInt8(0)} ${msg.readUInt8(1)} ${msg.readUInt8(2)}`);
           socket.close();
           clearTimeout(timeout);
-          resolve(Color.rgb(msg.readInt8(0), msg.readInt8(1), msg.readInt8(2)));
+          resolve(Color.rgb(msg.readUInt8(0), msg.readUInt8(1), msg.readUInt8(2)));
         })
         .on('error', err => reject(err))
         .on('listening', () => {

@@ -42,7 +42,7 @@ export default class UdpLedStrip {
   public sendColor(color: Color): Promise<void> {
     return new Promise((resolve, reject) => {
       const socket = dgram.createSocket('udp4');
-      socket.send(Uint8Array.from([0, ...color.array()]), this.port, this.ipAddress, err => {
+      socket.send(Uint8Array.from([0, ...color.rgb().array()]), this.port, this.ipAddress, err => {
         if (err) {
           reject(err);
         } else {

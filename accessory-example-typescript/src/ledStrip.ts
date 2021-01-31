@@ -57,6 +57,10 @@ class LedStrip implements AccessoryPlugin {
       .setCharacteristic(api.hap.Characteristic.Model, 'LED strip');
 
     log.info('LED Strip initialized');
+
+    setTimeout(() => {
+      this.ledStripService.updateCharacteristic(api.hap.Characteristic.Brightness, 66);
+    }, 30000);
   }
 
   /*
@@ -145,7 +149,7 @@ class LedStrip implements AccessoryPlugin {
   private async handleBrightnessGet(callback: CharacteristicGetCallback): Promise<void> {
     try {
       this.color = await this.udpLedStrip.fetchColor();
-      callback(undefined, this.color.value());
+      callback(undefined, 44);//this.color.value());
     } catch (err) {
       callback(err);
     }

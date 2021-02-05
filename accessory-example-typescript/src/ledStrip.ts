@@ -88,7 +88,7 @@ class LedStrip implements AccessoryPlugin {
   }
 
   private handleOnGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.udpLedStrip.color?.value() !== 0);
+    callback(undefined, undefined);
   }
 
   private handleOnSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {

@@ -88,7 +88,11 @@ class LedStrip implements AccessoryPlugin {
   }
 
   private handleOnGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, undefined);
+    try {
+      callback(null, this.udpLedStrip.color.value() !== 0);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   private handleOnSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
@@ -105,7 +109,11 @@ class LedStrip implements AccessoryPlugin {
   }
 
   private handleHueGet(callback: CharacteristicGetCallback): void {
-    callback(null, this.udpLedStrip.color?.hue());
+    try {
+      callback(null, this.udpLedStrip.color.hue());
+    } catch (err) {
+      callback(err);
+    }
   }
 
   private handleHueSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
@@ -123,7 +131,11 @@ class LedStrip implements AccessoryPlugin {
   }
 
   private handleSaturationGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.udpLedStrip.color?.saturationv());
+    try {
+      callback(null, this.udpLedStrip.color.saturationv());
+    } catch (err) {
+      callback(err);
+    }
   }
 
   private handleSaturationSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
@@ -141,7 +153,11 @@ class LedStrip implements AccessoryPlugin {
   }
 
   private handleBrightnessGet(callback: CharacteristicGetCallback): void {
-    callback(undefined, this.udpLedStrip.color?.value());
+    try {
+      callback(null, this.udpLedStrip.color.value());
+    } catch (err) {
+      callback(err);
+    }
   }
 
   private handleBrightnessSet(value: CharacteristicValue, callback: CharacteristicSetCallback): void {

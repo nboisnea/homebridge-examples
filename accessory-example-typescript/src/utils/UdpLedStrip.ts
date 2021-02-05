@@ -70,6 +70,7 @@ export default class UdpLedStrip extends EventEmitter {
   }
 
   public set color(color: Color) {
+    this.log?.info(`Sending ${color.rgb().array()[0]} ${color.rgb().array()[1]} ${color.rgb().array()[2]}`)
     this.udpClient.send(Uint8Array.from([0, ...color.rgb().array()]), this.port, this.ipAddress, err => {
       if (err) {
         throw err;

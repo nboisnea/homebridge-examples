@@ -35,16 +35,16 @@ class LedStrip implements AccessoryPlugin {
     this.name = config.name;
     this.udpLedStrip = new UdpLedStrip(config['ipAddress'], log)
       .on('colorChange', (newColor) => {
-        if (newColor.value() === 0) {
+        if (newColor.hsv().round().value() === 0) {
           this.isOn = false;
           this.ledStripService.updateCharacteristic(api.hap.Characteristic.On, false);
         } else {
           this.isOn = true;
-          this.color = newColor;
+          this.color = newColor.hsv().round();
           this.ledStripService.updateCharacteristic(api.hap.Characteristic.On, true);
-          this.ledStripService.updateCharacteristic(api.hap.Characteristic.Hue, newColor.hue());
-          this.ledStripService.updateCharacteristic(api.hap.Characteristic.Saturation, newColor.saturationv());
-          this.ledStripService.updateCharacteristic(api.hap.Characteristic.Brightness, newColor.value());
+          this.ledStripService.updateCharacteristic(api.hap.Characteristic.Hue, this.color.hue());
+          this.ledStripService.updateCharacteristic(api.hap.Characteristic.Saturation, this.color.saturationv());
+          this.ledStripService.updateCharacteristic(api.hap.Characteristic.Brightness, this.color.value());
         }
       });
 
@@ -89,7 +89,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleOnGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.value() !== 0);
+      callback(null, this.isOn);
     } catch (err) {
       callback(err);
     }
@@ -110,7 +110,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleHueGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.hue());
+      callback(null, this.color.hue());
     } catch (err) {
       callback(err);
     }
@@ -132,7 +132,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleSaturationGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.saturationv());
+      callback(null, this.color.saturationv());
     } catch (err) {
       callback(err);
     }
@@ -154,7 +154,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleBrightnessGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.value());
+      callback(null, this.color.value());
     } catch (err) {
       callback(err);
     }

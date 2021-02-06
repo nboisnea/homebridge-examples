@@ -110,7 +110,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleHueGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.color.hue());
+      callback(null, this.udpLedStrip.color.hsv().round().hue());
     } catch (err) {
       callback(err);
     }
@@ -132,7 +132,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleSaturationGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.color.saturationv());
+      callback(null, this.udpLedStrip.color.hsv().round().saturationv());
     } catch (err) {
       callback(err);
     }
@@ -154,7 +154,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleBrightnessGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.color.value());
+      callback(null, this.udpLedStrip.color.hsv().round().value());
     } catch (err) {
       callback(err);
     }

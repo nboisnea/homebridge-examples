@@ -34,14 +34,14 @@ class LedStrip implements AccessoryPlugin {
     this.log = log;
     this.name = config.name;
     this.udpLedStrip = new UdpLedStrip(config['ipAddress'], log)
-      .on('colorChange', (newColor) => {
+      .on('newColor', (newColor) => {
         if (newColor.hsv().round().value() === 0) {
           this.isOn = false;
-          this.ledStripService.updateCharacteristic(api.hap.Characteristic.On, false);
+          this.ledStripService.updateCharacteristic(api.hap.Characteristic.On, this.isOn);
         } else {
           this.isOn = true;
           this.color = newColor.hsv().round();
-          this.ledStripService.updateCharacteristic(api.hap.Characteristic.On, true);
+          this.ledStripService.updateCharacteristic(api.hap.Characteristic.On, this.isOn);
           this.ledStripService.updateCharacteristic(api.hap.Characteristic.Hue, this.color.hue());
           this.ledStripService.updateCharacteristic(api.hap.Characteristic.Saturation, this.color.saturationv());
           this.ledStripService.updateCharacteristic(api.hap.Characteristic.Brightness, this.color.value());
@@ -110,7 +110,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleHueGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.hsv().round().hue());
+      callback(null, this.color.hsv().hue());
     } catch (err) {
       callback(err);
     }
@@ -132,7 +132,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleSaturationGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.hsv().round().saturationv());
+      callback(null, this.color.saturationv());
     } catch (err) {
       callback(err);
     }
@@ -154,7 +154,7 @@ class LedStrip implements AccessoryPlugin {
 
   private handleBrightnessGet(callback: CharacteristicGetCallback): void {
     try {
-      callback(null, this.udpLedStrip.color.hsv().round().value());
+      callback(null, this.color.value());
     } catch (err) {
       callback(err);
     }

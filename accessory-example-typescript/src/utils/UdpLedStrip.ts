@@ -4,8 +4,9 @@ import { Socket } from 'dgram';
 import { Logging } from 'homebridge';
 import { AddressInfo } from 'net';
 import { EventEmitter } from 'events';
+import Timeout = NodeJS.Timeout;
 
-const MULTICAST = '239.0.0.123';
+const MULTICAST_ADDR = '239.0.0.123';
 const PORT = 7026;
 const UPDATE_FREQUENCY = 5000;
 
@@ -16,7 +17,7 @@ export default class UdpLedStrip extends EventEmitter {
   private udpClient: Socket;
   private log?: Logging;
   private currentColor?: Color;
-  private colorDate?: number;
+  private colorTimeout?: Timeout;
 
   constructor(ipAddress: string, log: Logging) {
     super();
@@ -33,30 +34,25 @@ export default class UdpLedStrip extends EventEmitter {
         if (rinfo.address === this.ipAddress) {
           this.log?.info(`Received RGB value: ${msg.readUInt8(0)} ${msg.readUInt8(1)} ${msg.readUInt8(2)}`);
           this.currentColor = Color.rgb(msg.readUInt8(0), msg.readUInt8(1), msg.readUInt8(2));
-          this.colorDate = Date.now();
-          this.emit('colorChange', this.currentColor);
+          this.emit('newColor', this.currentColor);
+
+          if (this.colorTimeout) {
+            clearTimeout(this.colorTimeout);
+          }
+          this.colorTimeout = setTimeout(() => {
+            // Reset color if no new value has been received after twice the strip's update rate
+            this.currentColor = undefined;
+          }, 2 * UPDATE_FREQUENCY);
         }
       });
     this.udpClient.bind(PORT, () => {
       this.udpClient.setBroadcast(true);
       this.udpClient.setMulticastTTL(128);
-      this.udpClient.addMembership(MULTICAST);
+      this.udpClient.addMembership(MULTICAST_ADDR);
     });
-
-    // Get current color and repeat every 5s
-    this.fetchColor();
-    setInterval(this.fetchColor.bind(this), UPDATE_FREQUENCY);
   }
 
-  private fetchColor(): void {
-    if (this.colorDate && Date.now() - this.colorDate > UPDATE_FREQUENCY) {
-      this.log?.info('Resetting color since no response were received');
-      this.currentColor = undefined;
-    }
-    this.udpClient.send(Uint8Array.from([-1]), this.port, this.ipAddress);
-  }
-
-  public on(event: 'colorChange', listener: (newColor: Color) => void): this {
+  public on(event: 'newColor', listener: (newColor: Color) => void): this {
     return super.on(event, listener);
   }
 
@@ -64,7 +60,6 @@ export default class UdpLedStrip extends EventEmitter {
     if (this.currentColor) {
       return this.currentColor;
     } else {
-      this.log?.error('Could not connect to LED strip');
       throw new Error('Could not connect to LED strip');
     }
   }
